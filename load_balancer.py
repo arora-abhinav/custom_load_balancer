@@ -22,7 +22,7 @@ async def health_request(url):
         response = {"Health": False}
     return response
         
-async def main():
+async def health_endpoint_scheduler():
     tasks = []
     #Task Group merges tasks together to run asynchronously. Exits when all tasks are done
     async with asyncio.TaskGroup() as tg:
@@ -32,16 +32,19 @@ async def main():
 
     print("Hit all endpoints")
 
-#Bridges the gap between asynchronous running and synchronous execution
-asyncio.run(main())
+async def main(sleep_time):
+    while True:
+        await asyncio.sleep(sleep_time)
+        await health_endpoint_scheduler()
 
-"""try:
-    for url in urls:
-        response = requests.get(url)
-        if response.status_code != 200:
-            raise HTTPException(status_code=404, detail="Incorrect URL or Username not found")
-        else:
-            print(response.json())
-except Exception:
-    print("Failed")
-"""
+#Bridges the gap between asynchronous running and synchronous execution
+#Concurrently hitting the endpoints
+asyncio.run(main(3))
+
+#This function is for simply forwarding a request to a specific worker
+async def forward_request(url):
+    try:
+        async with httpx.AsyncClient() as client:
+            respose = client.get(url)
+    except httpx.RequestError as e:
+        print("Oops:", e)
